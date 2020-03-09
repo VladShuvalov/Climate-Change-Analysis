@@ -12,8 +12,7 @@ output:
 library("INLA")
 knitr::opts_chunk$set(echo = TRUE)
 co2s = readRDS("co2s.rds")
-co2s$date = strptime(paste(co2s$day, co2s$time), format = "%Y-%m-%d %H:%M",
-                     tz = "UTC")
+co2s$date = strptime(paste(co2s$day, co2s$time), format = "%Y-%m-%d %H:%M", tz = "UTC")
 # remove low-quality measurements
 co2s[co2s$quality >= 1, "co2"] = NA
 ```
@@ -41,13 +40,11 @@ To model the observed data periodic annual and biannual effects have been used t
 
 ```{r pressure, echo=FALSE, fig.cap = "Plot of Random Effect",message = F, fig.height = 4, fig.width = 8}
 timeOrigin = ISOdate(1980, 1, 1, 0, 0, 0, tz = "UTC")
-timeBreaks = seq(min(co2s$date), ISOdate(2025, 1, 1,
-                                         tz = "UTC"), by = "14 days")
+timeBreaks = seq(min(co2s$date), ISOdate(2025, 1, 1, tz = "UTC"), by = "14 days")
 timePoints = timeBreaks[-1]
 co2s$timeRw2 = as.numeric(cut(co2s$date, timeBreaks))
 # derivatives of time random effect
-D = Diagonal(length(timePoints)) - bandSparse(length(timePoints),
-                                              k = -1)
+D = Diagonal(length(timePoints)) - bandSparse(length(timePoints), k = -1)
 derivLincomb = inla.make.lincombs(timeRw2 = D[-1, ])
 names(derivLincomb) = gsub("^lc", "time", names(derivLincomb))
 # seasonal effect
@@ -55,17 +52,12 @@ StimeSeason = seq(ISOdate(2009, 9, 1, tz = "UTC"),
                   ISOdate(2011, 3, 1, tz = "UTC"), len = 1001)
 StimeYear = as.numeric(difftime(StimeSeason, timeOrigin,
                                 "days"))/365.35
-seasonLincomb = inla.make.lincombs(sin12 = sin(2 *
-                                                 pi * StimeYear), cos12 = cos(2 * pi * StimeYear),
-                                   sin6 = sin(2 * 2 * pi * StimeYear), cos6 = cos(2 *
-                                                                                    2 * pi * StimeYear))
+seasonLincomb = inla.make.lincombs(sin12 = sin(2 * pi * StimeYear), cos12 = cos(2 * pi * StimeYear), sin6 = sin(2 * 2 * pi * StimeYear), cos6 = cos(2 * 2 * pi * StimeYear))
 names(seasonLincomb) = gsub("^lc", "season", names(seasonLincomb))
 
 # predictions
-StimePred = as.numeric(difftime(timePoints, timeOrigin,
-                                units = "days"))/365.35
-predLincomb = inla.make.lincombs(timeRw2 = Diagonal(length(timePoints)),
-                                 `(Intercept)` = rep(1, length(timePoints)), sin12 = sin(2 * pi * StimePred), cos12 = cos(2 * pi * StimePred), sin6 = sin(2 * 2 * pi * StimePred), cos6 = cos(2 * 2 * pi * StimePred))
+StimePred = as.numeric(difftime(timePoints, timeOrigin, units = "days"))/365.35
+predLincomb = inla.make.lincombs(timeRw2 = Diagonal(length(timePoints)), `(Intercept)` = rep(1, length(timePoints)), sin12 = sin(2 * pi * StimePred), cos12 = cos(2 * pi * StimePred), sin6 = sin(2 * 2 * pi * StimePred), cos6 = cos(2 * 2 * pi * StimePred))
 names(predLincomb) = gsub("^lc", "pred", names(predLincomb))
 StimeIndex = seq(1, length(timePoints))
 
@@ -79,14 +71,9 @@ axis(1, xax, format(xax, "%Y"))
   The rate of change of carbon dioxide concentrations is modelled by predicting the derivative of the fitted model. The figures below show prediction of the monthly and overall rate of change of carbon dioxide concentrations. Major world events are highlighted at 5 year intervals after their occurance. The red interval highlights the OPEC oil embargo which began in October 1973, blue interval highlights the global economic recessions around 1980-1982, yellow interval highlights the fall of the Berlin wall, pink interval highlights China joining the WTO, Orange interval highlights the bankruptcy of Lehman Brothers,  the symbolic start of the most recent global financial crisis, and the green line marks the signing of the Paris Agreement intended to limit CO2 emissions. 
 ```{r, echo = FALSE, fig.cap="Blue Line Marks the Current Year",message = F, fig.height = 4, fig.width = 8}
 derivPred = co2res$summary.lincomb.derived[grep("time",
-                                                rownames(co2res$summary.lincomb.derived)), c("0.5quant",
-                                                                                             "0.025quant", "0.975quant")]
-scaleTo10Years = (10 * 365.25/as.numeric(diff(timePoints,
-                                              units = "days")))
-matplot(timePoints[-1], scaleTo10Years * derivPred,
-        type = "l", col = "black", lty = c(1, 2, 2), ylim = c(0,
-                                                              0.1), xlim = range(as.numeric(co2s$date)),
-        xaxs = "i", xaxt = "n", xlab = "time", ylab = "Change in Conetration Per 10 Years (log ppm)")
+                                                rownames(co2res$summary.lincomb.derived)), c("0.5quant", "0.025quant", "0.975quant")]
+scaleTo10Years = (10 * 365.25/as.numeric(diff(timePoints, units = "days")))
+matplot(timePoints[-1], scaleTo10Years * derivPred, type = "l", col = "black", lty = c(1, 2, 2), ylim = c(0, 0.1), xlim = range(as.numeric(co2s$date)), xaxs = "i", xaxt = "n", xlab = "time", ylab = "Change in Conetration Per 10 Years (log ppm)")
 axis(1, xax, format(xax, "%Y"))
 abline(v = ISOdate(2015, 1, 1, tz = "UTC"), col = "green")
 
@@ -114,8 +101,7 @@ The figures below show seasonal and future predicted carbon dioxide concentratio
 matplot(StimeSeason, exp(co2res$summary.lincomb.derived[grep("season",rownames(co2res$summary.lincomb.derived)), c("0.5quant","0.025quant", "0.975quant")]), type = "l", col = "black",
         lty = c(1, 2, 2), log = "y", xaxs = "i", xaxt = "n",
         xlab = "Year", ylab = "Relative Concentration (ppm)", main = 'Seasonal CO2 Concentration')
-xaxSeason = seq(ISOdate(2009, 9, 1, tz = "UTC"), by = "2 months",
-                len = 20)
+xaxSeason = seq(ISOdate(2009, 9, 1, tz = "UTC"), by = "2 months", len = 20)
 axis(1, xaxSeason, format(xaxSeason, "%b"))
 ```
 ```{r, echo = FALSE, message = F, fig.height = 4, fig.width = 8}
@@ -124,8 +110,7 @@ timePred = co2res$summary.lincomb.derived[grep("pred", rownames(co2res$summary.l
 matplot(timePoints, exp(timePred), type = "l", col = "black",
         lty = c(1, 2, 2), log = "y", xlim = ISOdate(c(2010, 2025), 1, 1, tz = "UTC"), ylim = c(390, 435),
         xaxs = "i", xaxt = "n", xlab = "Year", ylab = "Concemtration (ppm)", main = "Plot of Fitted Predicitons")
-xaxPred = seq(ISOdate(2010, 1, 1, tz = "UTC"), by = "5 years",
-              len = 20)
+xaxPred = seq(ISOdate(2010, 1, 1, tz = "UTC"), by = "5 years", len = 20)
 abline(v = ISOdate(2019, 9, 9, tz = "UTC"), col = "blue")
 axis(1, xaxPred, format(xaxPred, "%Y"))
 ```
@@ -193,8 +178,7 @@ weekSample = do.call(cbind, lapply(mySample, function(xx) xx$latent))
 matplot(weekValues[-1], sableRes$summary.random$week[,paste0(c(0.5, 0.025, 0.975), "quant")], type = "l",
         lty = c(1, 2, 2), xlab = "Time", ylab = "Temperature (°C)", main = "Plot of 24 Fitted Posterior Samples",
         xaxt = "n", col = "black", xaxs = "i")
-forXaxis2 = ISOdate(seq(1880, 2040, by = 20), 1, 1,
-                    tz = "UTC")
+forXaxis2 = ISOdate(seq(1880, 2040, by = 20), 1, 1, tz = "UTC")
 axis(1, forXaxis2, format(forXaxis2, "%Y"))
 myCol = mapmisc::colourScale(NA, breaks = 1:8, style = "unique",
                              col = "Set2", opacity = 0.3)$col
